@@ -2,6 +2,7 @@ package com.sebastian.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,7 @@ import com.sebastian.model.Restaurant;
 import com.sebastian.model.User;
 import com.sebastian.repository.AddressRepository;
 import com.sebastian.repository.RestaurantRepository;
+import com.sebastian.repository.UserRepository;
 import com.sebastian.request.CreateRestaurantRequest;
 
 @Service
@@ -24,7 +26,7 @@ public class RestaurantServiceImpl implements RestaurantService {
     private AddressRepository addressRepository;
 
     @Autowired
-    private UserService userService;
+    private UserRepository userRepository;
 
 
     @Override
@@ -67,44 +69,76 @@ public class RestaurantServiceImpl implements RestaurantService {
 
     @Override
     public void deleteRestaurant(Long restaurantId) throws Exception {
-        // TODO Auto-generated method stub
-        
+        Restaurant restaurant = findRestaurantById(restaurantId);
+
+        restaurantRepository.delete(restaurant);
+    }
+
+    @Override
+    public List<Restaurant> getAllRestaurants() {
+        return restaurantRepository.findAll();
+    }
+
+    @Override
+    public List<Restaurant> searchRestaurant(String keyword) {
+        return restaurantRepository.findBySearchQuery(keyword);
+    }
+
+    @Override
+    public Restaurant findRestaurantById(Long id) throws Exception {
+        Optional<Restaurant> opt = restaurantRepository.findById(id);
+
+        if(opt.isEmpty()){
+            throw new Exception("Restaurant not found");
+        }
+        return opt.get();
+    }
+
+    @Override
+    public Restaurant getRestaurantByUserId(Long userId) throws Exception {
+        Restaurant restaurant = restaurantRepository.findByOwnerId(userId);
+        if(restaurant == null){
+            throw new Exception("Restaurant not found for the given user");
+        }
+        return restaurant;
     }
 
     @Override
     public RestaurantDto addToFavorites(Long restaurantId, User user) throws Exception {
         
-        return null;
+        Restaurant restaurant = findRestaurantById(restaurantId);
+
+        RestaurantDto dto = new RestaurantDto();
+        dto.setDescription(restaurant.getDescription());
+        dto.setImages(restaurant.getImages());
+        dto.setTitle(restaurant.getName());
+        dto.setId(restaurantId);
+
+        boolean isFavorited = false;
+        List<RestaurantDto> favorites = user.getFavorites();
+        for(RestaurantDto favorite : favorites){
+            if(favorite.getId().equals(restaurantId)){
+                isFavorited = true;
+                break;
+            }
+        }
+
+        if(isFavorited){
+            favorites.removeIf(favorite -> favorite.getId().equals(restaurantId));
+        }else{
+            favorites.add(dto);
+        }
+
+        userRepository.save(user);
+        return  dto;
     }
 
-    @Override
-    public Restaurant findRestaurantById(Long id) throws Exception {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<Restaurant> getAllRestaurants() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Restaurant getRestaurantByUserId(Long userId) throws Exception {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public List<Restaurant> searchRestaurant() {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public Restaurant updateRestaurantStatus(Long id) throws Exception {
-        // TODO Auto-generated method stub
-        return null;
+        Restaurant restaurant = findRestaurantById(id);
+        restaurant.setOpen(!restaurant.isOpen());
+        return restaurantRepository.save(restaurant);
     }
 
 }
