@@ -1,5 +1,6 @@
 package com.sebastian.config;
-import java.util.Collections;
+
+import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +14,7 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -21,8 +22,7 @@ public class AppConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.sessionManagement(management -> management.sessionCreationPolicy(
-                SessionCreationPolicy.STATELESS))
+        http.sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeRequests(authorize -> authorize
                 .requestMatchers("/api/admin/**").hasAnyRole("RESTAURANT_OWNER", "ADMIN")
                 .requestMatchers("/api/**").authenticated()
@@ -33,26 +33,28 @@ public class AppConfig {
         return http.build();
     }
 
-    private CorsConfigurationSource corsConfigurationSource() {
-        return request -> {
-            CorsConfiguration corsConfiguration = new CorsConfiguration();
-            corsConfiguration.setAllowedOrigins(Collections.singletonList("*"));
-            corsConfiguration.setAllowedMethods(Collections.singletonList("*"));
-            corsConfiguration.setAllowedHeaders(Collections.singletonList("*"));
-            corsConfiguration.setAllowCredentials(true);
-            corsConfiguration.setExposedHeaders(Collections.singletonList("Authorization"));
-            corsConfiguration.setMaxAge(3600L);
-            return corsConfiguration;
-        };
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(Arrays.asList("http://localhost:3000")); // Allow specific origin
+        corsConfiguration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allow specific HTTP methods
+        corsConfiguration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type")); // Allow specific headers
+        corsConfiguration.setAllowCredentials(true); // Allow credentials (cookies, etc.)
+        corsConfiguration.setExposedHeaders(Arrays.asList("Authorization")); // Expose specific headers
+        corsConfiguration.setMaxAge(3600L); // Cache preflight request for 3600 seconds
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration); // Apply configuration to all endpoints
+        return source;
     }
 
     @Bean
-    PasswordEncoder passwordEncoder(){
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public RestTemplate restTemplate(){
+    public RestTemplate restTemplate() {
         return new RestTemplate();
     }
 }

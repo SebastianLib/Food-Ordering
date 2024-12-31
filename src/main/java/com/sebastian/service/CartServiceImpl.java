@@ -32,6 +32,7 @@ public class CartServiceImpl implements CartService{
 
     @Override
     public CartItem addItemToCart(AddCartItemRequest req, String jwt) throws Exception {
+        
        User user = userService.findUserByJwtToken(jwt);
 
         Food food = foodService.findFoodById(req.getFoodId());

@@ -1,10 +1,12 @@
 package com.sebastian.service;
 
+import java.sql.Date; 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +37,7 @@ public class FoodServiceImpl implements FoodService{
         food.setIngredients(req.getIngredients());
         food.setSeasonal(req.isSesasional());
         food.setVegetarian(req.isVegetarian());
+        food.setCreationDate(new Date(System.currentTimeMillis()));
 
         Food savedFood = foodRepository.save(food);
         restaurant.getFoods().add(savedFood);
